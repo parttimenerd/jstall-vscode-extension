@@ -1,0 +1,47 @@
+name: Package VSIX
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  package-vsix:
+    name: Package VSIX
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build extension (production)
+        run: npm run package
+
+      - name: Create VSIX
+        run: npx @vscode/vsce package --out jstall-${{ github.ref_name }}.vsix
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: jstall-vsix-${{ github.ref_name }}
+          path: jstall-*.vsix
+          if-no-files-found: error
+
+      - name: Publish VSIX to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: jstall-*.vsix
+          generate_release_notes: true

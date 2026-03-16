@@ -1,0 +1,500 @@
+{
+  "name": "jstall",
+  "displayName": "JStall",
+  "description": "JVM diagnostics with JStall — status, flamegraphs, recording & replay",
+  "version": "0.1.0",
+  "publisher": "bechberger",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/parttimenerd/jstall-vscode-extension"
+  },
+  "homepage": "https://github.com/parttimenerd/jstall-vscode-extension#readme",
+  "bugs": {
+    "url": "https://github.com/parttimenerd/jstall-vscode-extension/issues"
+  },
+  "icon": "img/icon.png",
+  "keywords": [
+    "java",
+    "jvm",
+    "diagnostics",
+    "flamegraph",
+    "profiling",
+    "thread-dump",
+    "jstall"
+  ],
+  "engines": {
+    "vscode": "^1.110.0"
+  },
+  "categories": [
+    "Debuggers",
+    "Other"
+  ],
+  "activationEvents": [
+    "onDebugResolve:java",
+    "onLanguage:java",
+    "onLanguageModelTool:jstall_list_jvms",
+    "onLanguageModelTool:jstall_run",
+    "onLanguageModelTool:jstall_status",
+    "onLanguageModelTool:jstall_flamegraph",
+    "onLanguageModelTool:jstall_record"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "me.bechberger.jstall",
+        "label": "JStall"
+      }
+    ],
+    "commands": [
+      {
+        "command": "jstall.status",
+        "title": "JStall: Status",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "jstall.flame",
+        "title": "JStall: Flamegraph",
+        "icon": "$(flame)"
+      },
+      {
+        "command": "jstall.record",
+        "title": "JStall: Record",
+        "icon": "$(record)"
+      },
+      {
+        "command": "jstall.replay",
+        "title": "JStall: Replay Recording"
+      },
+      {
+        "command": "jstall.summary",
+        "title": "JStall: Recording Summary"
+      },
+      {
+        "command": "jstall.replayFlame",
+        "title": "JStall: Flamegraph from Recording"
+      },
+      {
+        "command": "jstall.extract",
+        "title": "JStall: Extract Recording"
+      },
+      {
+        "command": "jstall.quickActions",
+        "title": "JStall: Quick Actions",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "jstall.statusActive",
+        "title": "JStall: Status (Active JVM)",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "jstall.flameActive",
+        "title": "JStall: Flamegraph (Active JVM)",
+        "icon": "$(flame)"
+      },
+      {
+        "command": "jstall.recordActive",
+        "title": "JStall: Record (Active JVM)",
+        "icon": "$(record)"
+      },
+      {
+        "command": "jstall.saveFlamegraph",
+        "title": "JStall: Save Flamegraph",
+        "icon": "$(save)"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "jstall.recording",
+        "label": "JStall"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "jstall.statusActive",
+          "when": "jstall:hasActiveJvm",
+          "group": "navigation@1"
+        },
+        {
+          "command": "jstall.flameActive",
+          "when": "jstall:hasActiveJvm",
+          "group": "navigation@2"
+        },
+        {
+          "command": "jstall.recordActive",
+          "when": "jstall:hasActiveJvm",
+          "group": "navigation@3"
+        },
+        {
+          "command": "jstall.saveFlamegraph",
+          "when": "activeWebviewPanelId == jstallFlamegraph",
+          "group": "navigation@100"
+        }
+      ],
+      "explorer/context": [
+        {
+          "submenu": "jstall.recording",
+          "when": "resourceExtname == .zip",
+          "group": "navigation"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "submenu": "jstall.recording",
+          "when": "resourceExtname == .zip",
+          "group": "navigation"
+        }
+      ],
+      "jstall.recording": [
+        {
+          "command": "jstall.summary",
+          "group": "1_analyze@0"
+        },
+        {
+          "command": "jstall.replay",
+          "group": "1_analyze@1"
+        },
+        {
+          "command": "jstall.replayFlame",
+          "group": "1_analyze@2"
+        },
+        {
+          "command": "jstall.extract",
+          "group": "2_extract@1"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "jstall.quickActions",
+        "key": "ctrl+shift+j",
+        "mac": "cmd+shift+j"
+      }
+    ],
+    "configuration": {
+      "title": "JStall",
+      "properties": {
+        "jstall.javaPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to a Java 17+ executable. Leave empty for auto-detection (JAVA_HOME, PATH, etc.)."
+        },
+        "jstall.fullDiagnostics": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include expensive analyses (VM vitals, metaspace, etc.)"
+        },
+        "jstall.intelligentFilter": {
+          "type": "boolean",
+          "default": false,
+          "description": "Collapse framework internals in stack traces"
+        },
+        "jstall.noNative": {
+          "type": "boolean",
+          "default": false,
+          "description": "Ignore threads without Java stack traces"
+        },
+        "jstall.keep": {
+          "type": "boolean",
+          "default": false,
+          "description": "Persist thread dumps to disk"
+        },
+        "jstall.top": {
+          "type": "number",
+          "default": 3,
+          "description": "Number of top threads to show"
+        },
+        "jstall.recordIntervalSeconds": {
+          "type": "number",
+          "default": 5,
+          "description": "Interval between recording samples (seconds)"
+        },
+        "jstall.flameDurationSeconds": {
+          "type": "number",
+          "default": 10,
+          "description": "Flamegraph profiling duration (seconds)"
+        },
+        "jstall.recordingDir": {
+          "type": "string",
+          "default": ".jstall",
+          "description": "Directory for saving recordings. Relative paths are resolved from workspace root. Use an absolute path to save outside the workspace."
+        },
+        "jstall.mcp.status.full": {
+          "type": "boolean",
+          "default": false,
+          "description": "Default for MCP tool jstall_status: include expensive analyses (equivalent to --full)."
+        },
+        "jstall.mcp.status.intelligentFilter": {
+          "type": "boolean",
+          "default": false,
+          "description": "Default for MCP tool jstall_status: collapse framework internals in stack traces (equivalent to --intelligent-filter)."
+        },
+        "jstall.mcp.status.noNative": {
+          "type": "boolean",
+          "default": false,
+          "description": "Default for MCP tool jstall_status: ignore threads without Java stack traces (equivalent to --no-native)."
+        },
+        "jstall.mcp.status.keep": {
+          "type": "boolean",
+          "default": false,
+          "description": "Default for MCP tool jstall_status: persist dumps to disk (equivalent to --keep)."
+        },
+        "jstall.mcp.status.top": {
+          "type": "number",
+          "default": 3,
+          "description": "Default for MCP tool jstall_status: number of top threads to show (equivalent to --top)."
+        },
+        "jstall.mcp.status.dumps": {
+          "type": ["number", "null"],
+          "default": null,
+          "description": "Default for MCP tool jstall_status: number of dumps to collect (equivalent to --dumps)."
+        },
+        "jstall.mcp.status.interval": {
+          "type": "string",
+          "default": "",
+          "description": "Default for MCP tool jstall_status: interval between dumps, e.g. '5s' (equivalent to --interval). Empty means use jstall default."
+        },
+        "jstall.mcp.flamegraph.durationSeconds": {
+          "type": "number",
+          "default": 10,
+          "description": "Default for MCP tool jstall_flamegraph: profiling duration in seconds (equivalent to --duration)."
+        },
+        "jstall.mcp.flamegraph.event": {
+          "type": "string",
+          "default": "cpu",
+          "description": "Default for MCP tool jstall_flamegraph: profiling event, e.g. cpu, alloc, lock, wall, itimer (equivalent to --event)."
+        },
+        "jstall.mcp.flamegraph.interval": {
+          "type": "string",
+          "default": "10ms",
+          "description": "Default for MCP tool jstall_flamegraph: sampling interval, e.g. '10ms' (equivalent to --interval)."
+        },
+        "jstall.mcp.record.full": {
+          "type": "boolean",
+          "default": false,
+          "description": "Default for MCP tool jstall_record: include expensive diagnostics (equivalent to --full)."
+        },
+        "jstall.mcp.record.count": {
+          "type": "number",
+          "default": 2,
+          "description": "Default for MCP tool jstall_record: number of interval-based samples to collect (equivalent to --count)."
+        },
+        "jstall.mcp.record.interval": {
+          "type": "string",
+          "default": "5s",
+          "description": "Default for MCP tool jstall_record: interval between samples, e.g. '5s' (equivalent to --interval)."
+        }
+      }
+    },
+    "languageModelTools": [
+      {
+        "name": "jstall_list_jvms",
+        "tags": [
+          "jstall",
+          "java"
+        ],
+        "displayName": "List JVM Processes",
+        "toolReferenceName": "jstall_list_jvms",
+        "modelDescription": "Lists all currently running JVM (Java Virtual Machine) processes on the system. Returns their PIDs and main class names. Use this first to find JVMs before running diagnostics. Marks the active JVM if one is tracked.",
+        "userDescription": "List running JVM processes and highlight the active one.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "jstall_run",
+        "tags": [
+          "jstall",
+          "java"
+        ],
+        "displayName": "Run JStall Command",
+        "toolReferenceName": "jstall_run",
+        "modelDescription": "Runs an arbitrary jstall CLI command and returns its text output. Pass any arguments as a string array. Use [\"--help\"] to discover all available commands, or [\"status\", \"--help\"] to see options for a specific command. Examples: [\"status\", \"--full\", \"12345\"], [\"deadlock\", \"12345\"], [\"threads\", \"--no-native\", \"12345\"], [\"most-work\", \"--top=5\", \"12345\"], [\"waiting-threads\", \"12345\"], [\"dependency-graph\", \"12345\"], [\"vm-vitals\", \"12345\"], [\"gc-heap-info\", \"12345\"], [\"compiler-queue\", \"12345\"], [\"processes\", \"12345\"], [\"jvm-support\", \"12345\"], [\"status\", \"recording.zip\"], [\"record\", \"summary\", \"recording.zip\"]. For flamegraph or recording creation prefer jstall_flamegraph / jstall_record tools instead (they handle file paths automatically).",
+        "userDescription": "Run any JStall CLI command with explicit arguments.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "args": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Arguments to pass to jstall, e.g. [\"--help\"] or [\"status\", \"--full\", \"12345\"]."
+            }
+          },
+          "required": ["args"]
+        }
+      },
+      {
+        "name": "jstall_status",
+        "tags": [
+          "jstall",
+          "java"
+        ],
+        "displayName": "JVM Status Diagnostics",
+        "toolReferenceName": "jstall_status",
+        "modelDescription": "Runs JStall status diagnostics on a JVM process, all JVM processes, or a recording ZIP. Returns thread analysis, deadlock detection, top threads, and other diagnostic information. Supports all status flags. Set pid to \"all\" to analyze all JVMs. If no PID or recording is specified, uses the currently active JVM.",
+        "userDescription": "Run full JVM status diagnostics on a live process or recording ZIP.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "pid": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "enum": ["all"]
+                }
+              ],
+              "description": "PID of the JVM process to analyze, or \"all\" to analyze all JVMs. If omitted, uses the active JVM."
+            },
+            "recordingZip": {
+              "type": "string",
+              "description": "Path to a recording ZIP — analyze a recording instead of a live JVM."
+            },
+            "full": {
+              "type": "boolean",
+              "description": "Run all analyses including expensive ones (VM vitals, metaspace, etc.)."
+            },
+            "intelligentFilter": {
+              "type": "boolean",
+              "description": "Use intelligent stack trace filtering (collapses internal frames, focuses on application code)."
+            },
+            "noNative": {
+              "type": "boolean",
+              "description": "Ignore threads without stack traces (typically native/system threads)."
+            },
+            "keep": {
+              "type": "boolean",
+              "description": "Persist dumps to disk."
+            },
+            "top": {
+              "type": "number",
+              "description": "Number of top threads to show (default: 3)."
+            },
+            "dumps": {
+              "type": "number",
+              "description": "Number of dumps to collect."
+            },
+            "interval": {
+              "type": "string",
+              "description": "Interval between dumps, e.g. '5s' (default: 5s)."
+            }
+          }
+        }
+      },
+      {
+        "name": "jstall_flamegraph",
+        "tags": [
+          "jstall",
+          "java",
+          "profiling"
+        ],
+        "displayName": "JVM CPU Flamegraph",
+        "toolReferenceName": "jstall_flamegraph",
+        "modelDescription": "Captures a CPU profiling flamegraph for a JVM process (or from a recording ZIP) and returns the path to the generated HTML file. If no PID is specified, uses the currently active JVM. Supports cpu, alloc, lock, wall, itimer events.",
+        "userDescription": "Capture and return a flamegraph HTML for a JVM or recording.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "pid": {
+              "type": "number",
+              "description": "PID of the JVM process to profile. If omitted, uses the active JVM."
+            },
+            "durationSeconds": {
+              "type": "number",
+              "description": "Profiling duration in seconds (default: 10)."
+            },
+            "event": {
+              "type": "string",
+              "description": "Profiling event: cpu, alloc, lock, wall, itimer (default: cpu)."
+            },
+            "interval": {
+              "type": "string",
+              "description": "Sampling interval, e.g. '10ms' or '1000000' (default: 10ms)."
+            },
+            "recordingZip": {
+              "type": "string",
+              "description": "Path to a recording ZIP — generate flamegraph from replay instead of a live JVM."
+            }
+          }
+        }
+      },
+      {
+        "name": "jstall_record",
+        "tags": [
+          "jstall",
+          "java",
+          "diagnostics"
+        ],
+        "displayName": "JVM Diagnostic Recording",
+        "toolReferenceName": "jstall_record",
+        "modelDescription": "Records JVM diagnostics over time into a ZIP file for later analysis. Captures thread dumps, heap info, and profiling data. Set pid to \"all\" to record all JVMs on the system. If no PID is specified, uses the currently active JVM. The returned ZIP can be analyzed with jstall_run (e.g. [\"status\", \"<path>\"]) or jstall_flamegraph (recordingZip parameter).",
+        "userDescription": "Create a JVM diagnostics recording ZIP for later analysis.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "pid": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "enum": ["all"]
+                }
+              ],
+              "description": "PID of the JVM process to record, or \"all\" to record all JVMs. If omitted, uses the active JVM."
+            },
+            "full": {
+              "type": "boolean",
+              "description": "Include expensive diagnostics (VM.classes, GC.class_histogram, etc.)."
+            },
+            "count": {
+              "type": "number",
+              "description": "Number of interval-based samples to collect (default: 2)."
+            },
+            "interval": {
+              "type": "string",
+              "description": "Interval between samples, e.g. '5s' (default: 5s)."
+            }
+          }
+        }
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "download-jar": "node scripts/download-jar.js",
+    "compile": "node scripts/download-jar.js && webpack",
+    "watch": "webpack --watch",
+    "package": "node scripts/download-jar.js && webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.110.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "typescript-eslint": "^8.56.1",
+    "eslint": "^9.39.3",
+    "typescript": "^5.9.3",
+    "ts-loader": "^9.5.4",
+    "webpack": "^5.105.3",
+    "webpack-cli": "^6.0.1",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
