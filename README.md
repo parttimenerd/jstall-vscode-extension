@@ -1,5 +1,8 @@
 # JStall VSCode Extension
 
+![CI](https://github.com/parttimenerd/jstall-vscode-extension/workflows/ci/badge.svg)
+
+
 A tiny vscode extension to integrate the [jstall](https://github.com/parttimenerd/jstall) CLI tool,
 giving you JVM diagnostics (thread analysis, deadlock detection, flame graphs, …) directly in your IDE,
 instead of just basic thread dumps.

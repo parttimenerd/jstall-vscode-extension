@@ -248,7 +248,10 @@
           "description": "Default for MCP tool jstall_status: number of top threads to show (equivalent to --top)."
         },
         "jstall.mcp.status.dumps": {
-          "type": ["number", "null"],
+          "type": [
+            "number",
+            "null"
+          ],
           "default": null,
           "description": "Default for MCP tool jstall_status: number of dumps to collect (equivalent to --dumps)."
         },
@@ -322,11 +325,15 @@
           "properties": {
             "args": {
               "type": "array",
-              "items": { "type": "string" },
+              "items": {
+                "type": "string"
+              },
               "description": "Arguments to pass to jstall, e.g. [\"--help\"] or [\"status\", \"--full\", \"12345\"]."
             }
           },
-          "required": ["args"]
+          "required": [
+            "args"
+          ]
         }
       },
       {
@@ -350,7 +357,9 @@
                 },
                 {
                   "type": "string",
-                  "enum": ["all"]
+                  "enum": [
+                    "all"
+                  ]
                 }
               ],
               "description": "PID of the JVM process to analyze, or \"all\" to analyze all JVMs. If omitted, uses the active JVM."
@@ -450,7 +459,9 @@
                 },
                 {
                   "type": "string",
-                  "enum": ["all"]
+                  "enum": [
+                    "all"
+                  ]
                 }
               ],
               "description": "PID of the JVM process to record, or \"all\" to record all JVMs. If omitted, uses the active JVM."
@@ -485,16 +496,17 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.110.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
-    "typescript-eslint": "^8.56.1",
-    "eslint": "^9.39.3",
-    "typescript": "^5.9.3",
-    "ts-loader": "^9.5.4",
-    "webpack": "^5.105.3",
-    "webpack-cli": "^6.0.1",
+    "@types/vscode": "^1.110.0",
     "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2"
+    "@vscode/test-electron": "^2.5.2",
+    "eslint": "^9.39.3",
+    "markdownlint-cli2": "^0.21.0",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1",
+    "webpack": "^5.105.3",
+    "webpack-cli": "^6.0.1"
   }
 }
