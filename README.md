@@ -140,20 +140,14 @@ MCP-specific defaults are configurable with:
 
 ## Installation
 
+Just install the extension from the [marketplace](https://img.shields.io/visual-studio-marketplace/v/bechberger.jstall), from the release page, or build and run from source.
+
 ### From Source
 
 ```bash
 cd /path/to/jstall-vscode-extension
 npm install
 npm run compile
-```
-
-Then press <kbd>F5</kbd> in VS Code to launch the Extension Development Host.
-
-### Package as VSIX
-
-```bash
-
 npm install
 npx @vscode/vsce package
 ```

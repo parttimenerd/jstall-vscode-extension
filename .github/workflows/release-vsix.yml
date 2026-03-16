@@ -30,6 +30,31 @@ jobs:
         id: extension-version
         run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
 
+      - name: Extract changelog entry
+        env:
+          VERSION: ${{ steps.extension-version.outputs.version }}
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+
+          const version = process.env.VERSION;
+          const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+          const escapedVersion = version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const sectionPattern = new RegExp(
+            `^## \\[${escapedVersion}\\][\\t ]*\\r?\\n([\\s\\S]*?)(?=^## \\[|$)`,
+            'm'
+          );
+          const match = changelog.match(sectionPattern);
+
+          if (!match) {
+            console.error(`Could not find changelog section for version ${version} in CHANGELOG.md`);
+            process.exit(1);
+          }
+
+          const body = `## [${version}]\n\n${match[1].trim()}\n`;
+          fs.writeFileSync('release-notes.md', body);
+          EOF
+
       - name: Build extension (production)
         run: npm run package
 
@@ -49,4 +74,4 @@ jobs:
           name: v${{ steps.extension-version.outputs.version }}
           tag_name: ${{ github.ref_name }}
           files: jstall-*.vsix
-          generate_release_notes: true
+          body_path: release-notes.md
