@@ -2,9 +2,13 @@
 
 [![Build VS Code Extension](https://github.com/parttimenerd/jstall-vscode-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/parttimenerd/jstall-vscode-extension/actions/workflows/ci.yml)
 
+![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/bechberger.jstall)
+
 A tiny vscode extension to integrate the [jstall](https://github.com/parttimenerd/jstall) CLI tool,
 giving you JVM diagnostics (thread analysis, deadlock detection, flame graphs, …) directly in your IDE,
 instead of just basic thread dumps.
+
+_You can find the IntelliJ plugin for JStall that offers similar features [here](https://github.com/parttimenerd/jstall-intellij-plugin)._
 
 JStall is aimed at the moment when a JVM looks suspicious, stuck, or just slower than expected,
 and you want better diagnostics without switching to external tools.
@@ -25,8 +29,12 @@ on macOS and Linux._
 1. Install the extension
 2. Open a Java project
 3. Run or debug a Java application
-4. Use <kbd>Cmd+Shift+J</kbd> (macOS) / <kbd>Ctrl+Shift+J</kbd> (Windows/Linux) to open the **JStall Quick Actions** menu
-5. Choose **Status**, **Flamegraph**, or **Record**
+4. Run the JStall actions from the status bar or command palette to analyze the active JVM
+
+Or (with GitHub Copilot Chat):
+> "Analyze the status of all currently running JVMs"
+
+And you get exactly that.
 
 ## Status Bar & Editor Toolbar
 
@@ -155,6 +163,7 @@ npx @vscode/vsce package
 Install the resulting `.vsix` file via **Extensions → ⋯ → Install from VSIX…**
 
 ## Releasing a new version
+
 1. Update the version in `package.json` (e.g. to `0.1.0`)
 2. Update the `CHANGELOG.md` with the new version and changes
 3. Commit the changes and push to GitHub, tagging the commit with the version (e.g. `git tag v0.1.0`)
