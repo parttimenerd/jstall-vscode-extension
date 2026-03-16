@@ -26,22 +26,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Read extension version
+        id: extension-version
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+
       - name: Build extension (production)
         run: npm run package
 
       - name: Create VSIX
-        run: npx @vscode/vsce package --out jstall-${{ github.ref_name }}.vsix
+        run: npx @vscode/vsce package --out jstall-${{ steps.extension-version.outputs.version }}.vsix
 
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v6
         with:
-          name: jstall-vsix-${{ github.ref_name }}
+          name: jstall-vsix-${{ steps.extension-version.outputs.version }}
           path: jstall-*.vsix
           if-no-files-found: error
 
       - name: Publish VSIX to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: v${{ steps.extension-version.outputs.version }}
           tag_name: ${{ github.ref_name }}
           files: jstall-*.vsix
           generate_release_notes: true
