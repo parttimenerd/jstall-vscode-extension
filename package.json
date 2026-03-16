@@ -1,7 +1,7 @@
 {
   "name": "jstall",
   "displayName": "JStall",
-  "description": "JVM diagnostics with JStall — status, flamegraphs, recording & replay",
+  "description": "JVM diagnostics with JStall (status, flamegraphs, recording & replay) directly in VSCode",
   "version": "0.1.0",
   "publisher": "bechberger",
   "license": "MIT",

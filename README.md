@@ -1,6 +1,8 @@
-# JStall — VS Code Extension
+# JStall VSCode Extension
 
-JVM diagnostics directly in VS Code. Powered by the [jstall](https://github.com/parttimenerd/jstall) CLI tool.
+A tiny vscode extension to integrate the [jstall](https://github.com/parttimenerd/jstall) CLI tool,
+giving you JVM diagnostics (thread analysis, deadlock detection, flame graphs, …) directly in your IDE,
+instead of just basic thread dumps.
 
 JStall is aimed at the moment when a JVM looks suspicious, stuck, or just slower than expected,
 and you want better diagnostics without switching to external tools.
