@@ -1,0 +1,51 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm: watch",
+      "type": "npm",
+      "script": "watch",
+      "problemMatcher": {
+        "owner": "webpack",
+        "pattern": {
+          "regexp": "^ERROR in (.*)$",
+          "message": 1
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Compiler starting|webpack .* compiling",
+          "endsPattern": "Compiler finished|webpack .* compiled (successfully|with .*).*$"
+        }
+      },
+      "isBackground": true,
+      "presentation": {
+        "reveal": "never",
+        "group": "watchers"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "npm: watch-tests",
+      "type": "npm",
+      "script": "watch-tests",
+      "problemMatcher": "$tsc-watch",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "never",
+        "group": "watchers"
+      },
+      "group": "build"
+    },
+    {
+      "label": "tasks: watch-tests",
+      "dependsOn": [
+        "npm: watch",
+        "npm: watch-tests"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
