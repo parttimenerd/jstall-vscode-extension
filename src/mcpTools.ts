@@ -326,5 +326,32 @@ export function registerMcpTools(context: vscode.ExtensionContext): void {
         throw new Error(`Recording failed: ${stripAnsi(result.stderr || result.stdout)}`);
     });
 
-    console.log('JStall: Registered 5 language model tools.');
+    // ── Remote ─────────────────────────────────────────────────────
+    registerTool<{
+        type: 'ssh' | 'cf';
+        target: string;
+        command: string;
+        args?: string[];
+    }>(context, 'jstall_remote', async (input, token) => {
+        if (!input.type || !['ssh', 'cf'].includes(input.type)) {
+            throw new Error('"type" is required and must be "ssh" or "cf".');
+        }
+        if (!input.target?.trim()) {
+            throw new Error('"target" is required (SSH host like user@hostname, or CF app name).');
+        }
+        if (!input.command?.trim()) {
+            throw new Error('"command" is required (e.g. "status", "threads", "deadlock").');
+        }
+        const flag = input.type === 'ssh' ? '--ssh' : '--cf';
+        const flagValue = input.type === 'ssh' ? `ssh ${input.target.trim()}` : input.target.trim();
+        const remoteArgs = [
+            flag,
+            flagValue,
+            ...input.command.trim().split(/\s+/),
+            ...(input.args ?? []),
+        ];
+        return jstallOutput(await runJstall(context, remoteArgs, token));
+    });
+
+    console.log('JStall: Registered 6 language model tools.');
 }

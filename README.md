@@ -18,6 +18,7 @@ The extension supports:
 - Displaying flamegraphs in an interactive embedded viewer
 - Analyzing and extracting JStall recording ZIP files via context menu or command palette
 - Integration with GitHub Copilot and other AI assistants through custom Language Model Tools
+- Remote JVM diagnostics via SSH or Cloud Foundry: run any JStall command against remote machines
 
 _Flamegraphs are obtained via the embedded async-profiler and therefore is only supported
 on macOS and Linux._
@@ -54,9 +55,28 @@ when a JVM is active.
 | **JStall: Flamegraph** | Capture a CPU flamegraph and display it in an interactive HTML viewer |
 | **JStall: Record** | Record JVM diagnostics over time into a ZIP file (auto-saved to `.jstall/` directory) |
 | **JStall: Quick Actions** | Quick-pick menu for all three actions above |
+| **JStall: Remote** | Connect to a remote JVM via SSH or Cloud Foundry and run any JStall command |
 
 All commands auto-detect the active JVM from debug/run sessions.
 When invoked from the command palette, they show a JVM picker with the active JVM pre-selected.
+
+### Remote JVM Diagnostics
+
+Use **JStall: Remote** (or pick "Remote" from Quick Actions) to diagnose JVMs on remote machines:
+
+1. Choose connection type — **SSH** or **Cloud Foundry (CF)**
+2. Pick a saved host/app or enter a new target (e.g. `user@hostname` or `my-cf-app`)
+3. Select a command — List JVMs, Status, Flamegraph, Record, Threads, Deadlock, and more
+
+The extension remembers your last-used connection. Configure known hosts/apps in settings
+so they appear in the quick pick:
+
+```json
+{
+  "jstall.remote.sshHosts": ["deploy@prod.example.com", "user@staging"],
+  "jstall.remote.cfApps": ["my-backend", "api-service"]
+}
+```
 
 ### Recording File Actions
 
@@ -98,6 +118,7 @@ The extension registers five **Language Model Tools** for use by GitHub Copilot 
 | `#jstall_status` | Full JVM status diagnostics with all parameters (live or recording) |
 | `#jstall_flamegraph` | Capture a CPU profiling flamegraph (live or from recording) |
 | `#jstall_record` | Record JVM diagnostics to a ZIP file |
+| `#jstall_remote` | Run any JStall command on a remote JVM via SSH or Cloud Foundry |
 
 Use these in Copilot Chat by referencing the tool name, e.g.:
 > "Use #jstall_run to check what my Java app is doing"
@@ -117,6 +138,8 @@ Configurable under **Settings → Extensions → JStall**:
 | `jstall.recordIntervalSeconds` | Seconds between recording samples | 5 |
 | `jstall.flameDurationSeconds` | Profiling duration in seconds | 10 |
 | `jstall.recordingDir` | Directory for recordings (relative to workspace root) | `.jstall` |
+| `jstall.remote.sshHosts` | Known SSH connections for Remote | `[]` |
+| `jstall.remote.cfApps` | Known Cloud Foundry app names for Remote | `[]` |
 
 And the same for the MCP tool defaults.
 
@@ -156,9 +179,9 @@ Install the resulting `.vsix` file via **Extensions → ⋯ → Install from VSI
 
 ## Releasing a new version
 
-1. Update the version in `package.json` (e.g. to `0.1.0`)
+1. Update the version in `package.json` (e.g. to `0.1.1`)
 2. Update the `CHANGELOG.md` with the new version and changes
-3. Commit the changes and push to GitHub, tagging the commit with the version (e.g. `git tag v0.1.0`)
+3. Commit the changes and push to GitHub, tagging the commit with the version (e.g. `git tag v0.1.1`)
 4. Upload to the marketplace
 
 ## Support, Feedback, Contributing
