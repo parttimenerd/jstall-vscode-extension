@@ -2,7 +2,7 @@
   "name": "jstall",
   "displayName": "JStall",
   "description": "JVM diagnostics with JStall (status, flamegraphs, recording & replay) directly in VSCode",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "bechberger",
   "license": "MIT",
   "repository": {
@@ -37,7 +37,8 @@
     "onLanguageModelTool:jstall_run",
     "onLanguageModelTool:jstall_status",
     "onLanguageModelTool:jstall_flamegraph",
-    "onLanguageModelTool:jstall_record"
+    "onLanguageModelTool:jstall_record",
+    "onLanguageModelTool:jstall_remote"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -83,6 +84,11 @@
         "command": "jstall.quickActions",
         "title": "JStall: Quick Actions",
         "icon": "$(pulse)"
+      },
+      {
+        "command": "jstall.remote",
+        "title": "JStall: Remote",
+        "icon": "$(remote)"
       },
       {
         "command": "jstall.statusActive",
@@ -221,6 +227,18 @@
           "type": "string",
           "default": ".jstall",
           "description": "Directory for saving recordings. Relative paths are resolved from workspace root. Use an absolute path to save outside the workspace."
+        },
+        "jstall.remote.sshHosts": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Known SSH connections for JStall Remote (e.g., \"user@hostname\", \"deploy@prod.example.com\")."
+        },
+        "jstall.remote.cfApps": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "Known Cloud Foundry app names for JStall Remote."
         },
         "jstall.mcp.status.full": {
           "type": "boolean",
@@ -479,6 +497,45 @@
               "description": "Interval between samples, e.g. '5s' (default: 5s)."
             }
           }
+        }
+      },
+      {
+        "name": "jstall_remote",
+        "tags": [
+          "jstall",
+          "java",
+          "remote",
+          "ssh",
+          "cloud-foundry"
+        ],
+        "displayName": "Remote JVM Command",
+        "toolReferenceName": "jstall_remote",
+        "modelDescription": "Runs a jstall command against a remote JVM via SSH or Cloud Foundry (CF). Use type \"ssh\" with a target like \"user@hostname\" for SSH connections, or type \"cf\" with a Cloud Foundry app name. IMPORTANT: First use command \"list\" to discover running JVMs on the remote machine (returns PIDs and main class names). Then use command \"status\" with the PID to get full diagnostics. Other supported commands: threads, deadlock, most-work, waiting-threads, dependency-graph, vm-vitals, gc-heap-info, flame, record create. Pass the PID and flags via args, e.g. args: [\"12345\"] or [\"--full\", \"12345\"].",
+        "userDescription": "Run JStall diagnostics on a remote JVM via SSH or Cloud Foundry.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["ssh", "cf"],
+              "description": "Connection type: \"ssh\" for SSH or \"cf\" for Cloud Foundry."
+            },
+            "target": {
+              "type": "string",
+              "description": "SSH host (e.g. \"user@hostname\") or Cloud Foundry app name."
+            },
+            "command": {
+              "type": "string",
+              "description": "The jstall command to run. Use \"list\" to discover remote JVMs first, then \"status\" for diagnostics. Other commands: \"threads\", \"deadlock\", \"most-work\", \"waiting-threads\", \"dependency-graph\", \"vm-vitals\", \"gc-heap-info\", \"flame\", \"record create\"."
+            },
+            "args": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Additional arguments/flags, e.g. [\"--full\", \"--top=5\"]."
+            }
+          },
+          "required": ["type", "target", "command"]
         }
       }
     ]

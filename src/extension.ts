@@ -8,6 +8,7 @@ import { showFlamegraph } from './flamegraphViewer';
 import { replayRecording, showRecordingFlamegraph, extractRecording, showRecordingSummary, formatFileSize, platformRevealLabel } from './recordingHandler';
 import { initDebugIntegration, getActiveJvm, pickJvmWithDebugHint, disposeDebugIntegration } from './debugIntegration';
 import { registerMcpTools } from './mcpTools';
+import { runRemoteCommand } from './remoteJstall';
 
 let outputChannel: vscode.OutputChannel;
 
@@ -185,6 +186,7 @@ export function activate(context: vscode.ExtensionContext) {
                 { label: '$(pulse) Status', description: 'Thread dumps & diagnostics', command: 'jstall.status' },
                 { label: '$(flame) Flamegraph', description: 'CPU profiling flamegraph', command: 'jstall.flame' },
                 { label: '$(record) Record', description: 'Full diagnostic recording', command: 'jstall.record' },
+                { label: '$(remote) Remote', description: 'Connect to remote JVM (SSH / CF)', command: 'jstall.remote' },
             ];
             const pick = await vscode.window.showQuickPick(actions, { placeHolder: 'JStall: Choose action' });
             if (pick) { await vscode.commands.executeCommand(pick.command); }
@@ -226,6 +228,18 @@ export function activate(context: vscode.ExtensionContext) {
                 await runRecordOnJvm(context, jvm);
             } catch (err: unknown) {
                 vscode.window.showErrorMessage(`JStall Record failed: ${errorMessage(err)}`);
+            }
+        })
+    );
+
+    // ─── Remote JVM command ──────────────────────────────────────
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('jstall.remote', async () => {
+            try {
+                await runRemoteCommand(context, outputChannel);
+            } catch (err: unknown) {
+                vscode.window.showErrorMessage(`JStall Remote failed: ${errorMessage(err)}`);
             }
         })
     );
