@@ -9,6 +9,7 @@ import { replayRecording, showRecordingFlamegraph, extractRecording, showRecordi
 import { initDebugIntegration, getActiveJvm, pickJvmWithDebugHint, disposeDebugIntegration } from './debugIntegration';
 import { registerMcpTools } from './mcpTools';
 import { runRemoteCommand } from './remoteJstall';
+import { clearAllHighlights, onDidChangeVisibleEditors } from './codeNavigation';
 
 let outputChannel: vscode.OutputChannel;
 
@@ -297,6 +298,16 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.window.showErrorMessage(`JStall Extract failed: ${errorMessage(err)}`);
             }
         })
+    );
+
+    // ─── Code Navigation (highlights) ───────────────────────────────
+    context.subscriptions.push(
+        vscode.commands.registerCommand('jstall.clearHighlights', () => {
+            clearAllHighlights();
+        })
+    );
+    context.subscriptions.push(
+        vscode.window.onDidChangeVisibleTextEditors(onDidChangeVisibleEditors)
     );
 
     // ─── Language Model Tools (MCP) ────────────────────────────────

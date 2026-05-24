@@ -12,5 +12,10 @@
 	"typescript.tsc.autoDetect": "off",
 	"gopls": {
 		"vulncheck": "Imports"
-	}
+	},
+	// JStall demo: pre-configured CF app
+	"jstall.remote.cfApps": [
+		"sflight-srv"
+	],
+	"java.compile.nullAnalysis.mode": "disabled"
 }

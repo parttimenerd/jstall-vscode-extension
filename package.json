@@ -38,7 +38,12 @@
     "onLanguageModelTool:jstall_status",
     "onLanguageModelTool:jstall_flamegraph",
     "onLanguageModelTool:jstall_record",
-    "onLanguageModelTool:jstall_remote"
+    "onLanguageModelTool:jstall_remote",
+    "onLanguageModelTool:jstall_reveal_code",
+    "onLanguageModelTool:jstall_reveal_code_batch",
+    "onLanguageModelTool:jstall_clear_highlights",
+    "onLanguageModelTool:jstall_dependency_graph",
+    "onLanguageModelTool:jstall_run_profiled"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -109,6 +114,11 @@
         "command": "jstall.saveFlamegraph",
         "title": "JStall: Save Flamegraph",
         "icon": "$(save)"
+      },
+      {
+        "command": "jstall.clearHighlights",
+        "title": "JStall: Clear Highlights",
+        "icon": "$(close-all)"
       }
     ],
     "submenus": [
@@ -247,12 +257,12 @@
         },
         "jstall.mcp.status.intelligentFilter": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Default for MCP tool jstall_status: collapse framework internals in stack traces (equivalent to --intelligent-filter)."
         },
         "jstall.mcp.status.noNative": {
           "type": "boolean",
-          "default": false,
+          "default": true,
           "description": "Default for MCP tool jstall_status: ignore threads without Java stack traces (equivalent to --no-native)."
         },
         "jstall.mcp.status.keep": {
@@ -362,7 +372,7 @@
         ],
         "displayName": "JVM Status Diagnostics",
         "toolReferenceName": "jstall_status",
-        "modelDescription": "Runs JStall status diagnostics on a JVM process, all JVM processes, or a recording ZIP. Returns thread analysis, deadlock detection, top threads, and other diagnostic information. Supports all status flags. Set pid to \"all\" to analyze all JVMs. If no PID or recording is specified, uses the currently active JVM.",
+        "modelDescription": "Runs JStall status diagnostics on a JVM process, all JVM processes, or a recording ZIP. Returns thread analysis, deadlock detection, top threads, and other diagnostic information. Supports all status flags. Set pid to \"all\" to analyze all JVMs. If no PID or recording is specified, uses the currently active JVM. When the output contains deadlocks or problematic threads, use jstall_reveal_code_batch to highlight all offending frames at once (with severity 'error' for deadlocks, 'warning' for blocked threads). Include explanations describing what each thread holds/awaits.",
         "userDescription": "Run full JVM status diagnostics on a live process or recording ZIP.",
         "canBeReferencedInPrompt": true,
         "inputSchema": {
@@ -510,7 +520,7 @@
         ],
         "displayName": "Remote JVM Command",
         "toolReferenceName": "jstall_remote",
-        "modelDescription": "Runs a jstall command against a remote JVM via SSH or Cloud Foundry (CF). Use type \"ssh\" with a target like \"user@hostname\" for SSH connections, or type \"cf\" with a Cloud Foundry app name. IMPORTANT: First use command \"list\" to discover running JVMs on the remote machine (returns PIDs and main class names). Then use command \"status\" with the PID to get full diagnostics. Other supported commands: threads, deadlock, most-work, waiting-threads, dependency-graph, vm-vitals, gc-heap-info, flame, record create. Pass the PID and flags via args, e.g. args: [\"12345\"] or [\"--full\", \"12345\"].",
+        "modelDescription": "Runs a jstall command against a remote JVM via SSH or Cloud Foundry (CF). Use type \"ssh\" with a target like \"user@hostname\" for SSH connections, or type \"cf\" with a Cloud Foundry app name. First use command \"list\" to discover running JVMs on the remote machine (returns PIDs and main class names). Then use command \"status\" with the PID to get full diagnostics. When the output contains deadlocks or problematic threads, use jstall_reveal_code_batch to highlight all offending frames at once (with severity 'error' for deadlocks, 'warning' for blocked threads, and explanations). Other supported commands: threads, deadlock, most-work, waiting-threads, dependency-graph, vm-vitals, gc-heap-info, flame, record create. Pass the PID and flags via args, e.g. args: [\"12345\"] or [\"--full\", \"12345\"].",
         "userDescription": "Run JStall diagnostics on a remote JVM via SSH or Cloud Foundry.",
         "canBeReferencedInPrompt": true,
         "inputSchema": {
@@ -536,6 +546,205 @@
             }
           },
           "required": ["type", "target", "command"]
+        }
+      },
+      {
+        "name": "jstall_reveal_code",
+        "tags": [
+          "jstall",
+          "java",
+          "navigation"
+        ],
+        "displayName": "Reveal Java Code",
+        "toolReferenceName": "jstall_reveal_code",
+        "modelDescription": "Opens a Java source file in the editor and highlights a specific line or range. Use this after jstall_status finds issues — pass the fully-qualified class name and line number from the stack trace. ALWAYS provide 'explanation' and 'severity'. Use severity 'error' (red) for deadlocks, 'warning' (yellow) for blocked/waiting threads, 'info' (blue) for general navigation. Use 'endLine' to highlight an entire synchronized block or method. For deadlocks, use viewColumn 'one' and 'beside' to show both frames side by side. For multiple locations, prefer jstall_reveal_code_batch instead of multiple individual calls.",
+        "userDescription": "Navigate to a Java class and highlight a specific line or range.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "className": {
+              "type": "string",
+              "description": "Fully-qualified Java class name (e.g. 'com.example.OrderService'). May include ':lineNumber' suffix (e.g. 'com.example.OrderService:42')."
+            },
+            "lineNumber": {
+              "type": "number",
+              "description": "1-based line number to highlight and jump to."
+            },
+            "endLine": {
+              "type": "number",
+              "description": "Optional 1-based end line to highlight a range (e.g. an entire synchronized block). If omitted, only the single line is highlighted."
+            },
+            "message": {
+              "type": "string",
+              "description": "Optional message to display as a VS Code notification."
+            },
+            "explanation": {
+              "type": "string",
+              "description": "Inline annotation displayed beside the highlighted line (e.g. 'Thread-A holds lockA, waiting for lockB'). ALWAYS provide this."
+            },
+            "severity": {
+              "type": "string",
+              "enum": ["error", "warning", "info"],
+              "description": "Highlight color: 'error' (red) for deadlocks, 'warning' (yellow) for blocked/waiting threads, 'info' (blue, default) for general."
+            },
+            "viewColumn": {
+              "type": "string",
+              "enum": ["beside", "one", "two", "three"],
+              "description": "Editor column to open in. Use 'beside' or explicit 'one'/'two'/'three'. For deadlocks, use 'one' + 'beside' to show side by side."
+            }
+          },
+          "required": ["className", "lineNumber"]
+        }
+      },
+      {
+        "name": "jstall_reveal_code_batch",
+        "tags": [
+          "jstall",
+          "java",
+          "navigation"
+        ],
+        "displayName": "Reveal Multiple Code Locations",
+        "toolReferenceName": "jstall_reveal_code_batch",
+        "modelDescription": "Reveals and highlights multiple Java code locations in a single call. Preferred over calling jstall_reveal_code multiple times. Each location can have its own severity, explanation, line range, and viewColumn. Ideal for deadlocks (show both frames), circular dependencies (show all participants), or top-N hot threads.",
+        "userDescription": "Navigate to and highlight multiple Java code locations at once.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "locations": {
+              "type": "array",
+              "description": "Array of code locations to reveal and highlight.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "className": {
+                    "type": "string",
+                    "description": "Fully-qualified Java class name."
+                  },
+                  "lineNumber": {
+                    "type": "number",
+                    "description": "1-based line number."
+                  },
+                  "endLine": {
+                    "type": "number",
+                    "description": "Optional end line for range highlighting."
+                  },
+                  "explanation": {
+                    "type": "string",
+                    "description": "Inline annotation for this location."
+                  },
+                  "severity": {
+                    "type": "string",
+                    "enum": ["error", "warning", "info"],
+                    "description": "Highlight color: error (red), warning (yellow), info (blue)."
+                  },
+                  "viewColumn": {
+                    "type": "string",
+                    "enum": ["beside", "one", "two", "three"],
+                    "description": "Editor column to open in."
+                  }
+                },
+                "required": ["className", "lineNumber"]
+              }
+            },
+            "message": {
+              "type": "string",
+              "description": "Optional notification message shown after all locations are revealed."
+            }
+          },
+          "required": ["locations"]
+        }
+      },
+      {
+        "name": "jstall_clear_highlights",
+        "tags": [
+          "jstall",
+          "java",
+          "navigation"
+        ],
+        "displayName": "Clear Code Highlights",
+        "toolReferenceName": "jstall_clear_highlights",
+        "modelDescription": "Removes all JStall code highlights that were previously added by jstall_reveal_code or jstall_reveal_code_batch. Call this after the user has reviewed the highlighted code or before highlighting a new set of lines for a different issue.",
+        "userDescription": "Remove all JStall line highlights from the editor.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "jstall_dependency_graph",
+        "tags": [
+          "jstall",
+          "java",
+          "diagnostics"
+        ],
+        "displayName": "Thread Dependency Graph",
+        "toolReferenceName": "jstall_dependency_graph",
+        "modelDescription": "Visualizes thread lock dependencies as a Mermaid flowchart diagram rendered inline in the chat. Shows which threads are waiting on locks held by other threads, with deadlock cycles highlighted in red. Returns the raw JStall dependency-graph text. Use this after jstall_status detects deadlocks or contention.",
+        "userDescription": "Show a visual Mermaid diagram of thread lock dependencies.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "pid": {
+              "anyOf": [
+                { "type": "number" },
+                { "type": "string", "enum": ["all"] }
+              ],
+              "description": "PID of the JVM process to analyze, or \"all\". If omitted, uses the active JVM."
+            },
+            "recordingZip": {
+              "type": "string",
+              "description": "Path to a recording ZIP to analyze instead of a live JVM."
+            },
+            "intelligentFilter": {
+              "type": "boolean",
+              "description": "Collapse framework internals in stack traces."
+            }
+          }
+        }
+      },
+      {
+        "name": "jstall_run_profiled",
+        "tags": [
+          "jstall",
+          "java",
+          "profiling",
+          "async-profiler"
+        ],
+        "displayName": "Run Java with Profiling",
+        "toolReferenceName": "jstall_run_profiled",
+        "modelDescription": "Runs a Java app with async-profiler attached from start. Profiles the full lifecycle (startup, short-lived apps). Returns process output + path to profile file (collapsed stacks by default — use .html for flamegraph, .jfr for JFR). Events: cpu, alloc, lock, wall, itimer.",
+        "userDescription": "Run a Java app with async-profiler from the start.",
+        "canBeReferencedInPrompt": true,
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "javaArgs": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Arguments to pass to the java command (everything after 'java'). Examples: [\"-jar\", \"target/app.jar\", \"arg1\"], [\"-cp\", \"classes\", \"com.example.Main\", \"--flag\"]."
+            },
+            "event": {
+              "type": "string",
+              "description": "Profiling event: cpu, alloc, lock, wall, itimer (default: cpu)."
+            },
+            "interval": {
+              "type": "string",
+              "description": "Sampling interval, e.g. '10ms' or '1000000' (in nanoseconds). Default depends on event."
+            },
+            "outputFile": {
+              "type": "string",
+              "description": "Path for the profile output file. Defaults to a temp .collapsed file whose content is returned directly. Use .html for flamegraph, .jfr for JFR."
+            },
+            "cwd": {
+              "type": "string",
+              "description": "Working directory for the Java process. Defaults to the workspace root."
+            }
+          },
+          "required": ["javaArgs"]
         }
       }
     ]

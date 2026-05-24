@@ -328,3 +328,143 @@ export function resolveRecordingSavePath(target: number | string): RecordingSave
 
     return { savePath: path.join(saveDir, fileName), fileName };
 }
+
+// --- Async-profiler native library extraction ---
+
+/**
+ * Extracts the async-profiler native library from jstall.jar to a temp directory.
+ * Returns the path to the extracted .dylib/.so file.
+ * Caches the extraction so it's only done once per session.
+ */
+let cachedProfilerLibPath: string | undefined;
+
+export async function extractAsyncProfilerLib(context: vscode.ExtensionContext): Promise<string> {
+    if (cachedProfilerLibPath && fs.existsSync(cachedProfilerLibPath)) {
+        return cachedProfilerLibPath;
+    }
+
+    const jarPath = getJarPath(context);
+    if (!fs.existsSync(jarPath)) {
+        throw new Error('jstall.jar not found in lib/. Run "npm run download-jar" to fetch it.');
+    }
+
+    let libName: string;
+    const platform = os.platform();
+    const arch = os.arch();
+    if (platform === 'darwin') {
+        libName = 'libs/libasyncProfiler-4.4-macos.dylib';
+    } else if (platform === 'linux' && arch === 'x64') {
+        libName = 'libs/libasyncProfiler-4.4-linux-x64.so';
+    } else if (platform === 'linux' && arch === 'arm64') {
+        libName = 'libs/libasyncProfiler-4.4-linux-arm64.so';
+    } else {
+        throw new Error(`async-profiler is not supported on ${platform}/${arch}. Only macOS and Linux are supported.`);
+    }
+
+    const extractDir = path.join(os.tmpdir(), 'jstall-profiler');
+    if (!fs.existsSync(extractDir)) {
+        fs.mkdirSync(extractDir, { recursive: true });
+    }
+
+    const destPath = path.join(extractDir, path.basename(libName));
+
+    // Extract using jar command or unzip
+    if (!fs.existsSync(destPath)) {
+        const { execFileSync } = require('child_process');
+        try {
+            execFileSync('unzip', ['-o', '-j', jarPath, libName, '-d', extractDir], { timeout: 15000 });
+        } catch {
+            // Fallback: try jar command
+            const javaPath = await findJava17Plus();
+            const javaDir = path.dirname(javaPath);
+            const jarCmd = path.join(javaDir, 'jar');
+            execFileSync(jarCmd, ['xf', jarPath, libName], { cwd: extractDir, timeout: 15000 });
+            // jar extracts with directory structure, move file up
+            const extractedPath = path.join(extractDir, libName);
+            if (fs.existsSync(extractedPath) && extractedPath !== destPath) {
+                fs.renameSync(extractedPath, destPath);
+            }
+        }
+    }
+
+    if (!fs.existsSync(destPath)) {
+        throw new Error(`Failed to extract async-profiler library from jstall.jar`);
+    }
+
+    cachedProfilerLibPath = destPath;
+    return destPath;
+}
+
+// --- Run Java with async-profiler ---
+
+export interface ProfiledRunResult {
+    stdout: string;
+    stderr: string;
+    exitCode: number;
+    profileOutputFile: string;
+}
+
+/**
+ * Runs a Java application with async-profiler attached from the start.
+ */
+export async function runJavaProfiled(
+    context: vscode.ExtensionContext,
+    opts: {
+        javaArgs: string[];
+        event?: string;
+        interval?: string;
+        outputFile?: string;
+        cwd?: string;
+    },
+    token?: vscode.CancellationToken
+): Promise<ProfiledRunResult> {
+    const javaPath = await findJava17Plus();
+    const profilerLib = await extractAsyncProfilerLib(context);
+
+    const event = opts.event || 'cpu';
+    const outputFile = opts.outputFile || path.join(os.tmpdir(), `jstall-profile-${event}-${Date.now()}.collapsed`);
+
+    // Build agentpath string
+    let agentOpts = `start,event=${event},file=${outputFile}`;
+    if (opts.interval) {
+        agentOpts += `,interval=${opts.interval}`;
+    }
+
+    const fullArgs = [
+        '--enable-native-access=ALL-UNNAMED',
+        `-agentpath:${profilerLib}=${agentOpts}`,
+        ...opts.javaArgs,
+    ];
+
+    const cwd = opts.cwd || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+    return new Promise((resolve, reject) => {
+        const proc = spawn(javaPath, fullArgs, { cwd });
+
+        const stdoutChunks: string[] = [];
+        const stderrChunks: string[] = [];
+
+        proc.stdout.on('data', (data: Buffer) => stdoutChunks.push(data.toString()));
+        proc.stderr.on('data', (data: Buffer) => stderrChunks.push(data.toString()));
+
+        let cancelSub: vscode.Disposable | undefined;
+        if (token) {
+            cancelSub = token.onCancellationRequested(() => proc.kill());
+        }
+
+        proc.on('close', (code) => {
+            cancelSub?.dispose();
+            resolve({
+                stdout: stdoutChunks.join(''),
+                stderr: stderrChunks.join(''),
+                exitCode: code ?? 1,
+                profileOutputFile: outputFile,
+            });
+        });
+
+        proc.on('error', (err) => {
+            cancelSub?.dispose();
+            reject(err);
+        });
+    });
+}

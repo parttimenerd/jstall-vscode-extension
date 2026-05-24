@@ -4,6 +4,7 @@ out/**
 node_modules/**
 src/**
 scripts/**
+cap-sflight/**
 .gitignore
 .yarnrc
 webpack.config.js
