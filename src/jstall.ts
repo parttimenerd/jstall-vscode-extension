@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { execFile, spawn } from 'child_process';
+import { execFile, execFileSync, spawn } from 'child_process';
 
 // --- Java 17+ discovery ---
 
@@ -370,7 +370,6 @@ export async function extractAsyncProfilerLib(context: vscode.ExtensionContext):
 
     // Extract using jar command or unzip
     if (!fs.existsSync(destPath)) {
-        const { execFileSync } = require('child_process');
         try {
             execFileSync('unzip', ['-o', '-j', jarPath, libName, '-d', extractDir], { timeout: 15000 });
         } catch {

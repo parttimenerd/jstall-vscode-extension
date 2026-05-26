@@ -422,14 +422,14 @@ export function registerMcpTools(context: vscode.ExtensionContext): void {
 
     // ── Reveal Code Batch ─────────────────────────────────────────
     registerTool<{
-        locations: Array<{
+        locations: {
             className: string;
             lineNumber: number;
             endLine?: number;
             explanation?: string;
             severity?: 'error' | 'warning' | 'info';
             viewColumn?: 'beside' | 'one' | 'two' | 'three';
-        }>;
+        }[];
         message?: string;
     }>(context, 'jstall_reveal_code_batch', async (input) => {
         if (!input.locations || !Array.isArray(input.locations) || input.locations.length === 0) {
@@ -496,7 +496,7 @@ export function registerMcpTools(context: vscode.ExtensionContext): void {
     });
 
     // ── Clear Highlights ──────────────────────────────────────────
-    registerTool<Record<string, never>>(context, 'jstall_clear_highlights', async () => {
+    registerTool<Record<string, never>>(context, 'jstall_clear_highlights', () => {
         clearAllHighlights();
         return 'All JStall code highlights have been cleared.';
     });
