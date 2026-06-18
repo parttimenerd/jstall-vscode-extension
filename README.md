@@ -1,4 +1,9 @@
-# JStall VSCode Extension
+# JStall VSCode Extension — Archived
+
+> **This repository has been archived.**
+> Development continues in the main [jstall](https://github.com/parttimenerd/jstall) repository
+> under [`ide-support/vscode-extension/`](https://github.com/parttimenerd/jstall/tree/main/ide-support/vscode-extension).
+> Please open issues and PRs there.
 
 [![Build VS Code Extension](https://github.com/parttimenerd/jstall-vscode-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/parttimenerd/jstall-vscode-extension/actions/workflows/ci.yml) [![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/bechberger.jstall)](https://marketplace.visualstudio.com/items?itemName=bechberger.jstall)
 
